@@ -26,8 +26,9 @@ on:
 
 env:
   AZURE_WEBAPP_NAME: ${{ secrets.AZURE_WEBAPP_NAME }} # set this to your application's name
-  AZURE_WEBAPP_PACKAGE_PATH: "." # set this to the path to your web app project, defaults to the repository root
+  AZURE_WEBAPP_PACKAGE_PATH: "release" # deploy the production build artifact, not the raw repository root
   PHP_VERSION: "8.4" # set this to the PHP version to use
+  NODE_VERSION: "22"
 
 permissions:
   contents: read
@@ -39,41 +40,65 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Validate Azure secrets
+        run: |
+          test -n "${AZURE_WEBAPP_NAME}" || (echo "AZURE_WEBAPP_NAME secret is not set" && exit 1)
+          test -n "${AZURE_WEBAPP_PUBLISH_PROFILE}" || (echo "AZURE_WEBAPP_PUBLISH_PROFILE secret is not set" && exit 1)
+        env:
+          AZURE_WEBAPP_PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+
       - name: Setup PHP
         uses: shivammathur/setup-php@7c0b4c8c8ebed23eca9ec2802474895d105b11bc
         with:
           php-version: ${{ env.PHP_VERSION }}
+          coverage: none
 
-      - name: Check if composer.json exists
-        id: check_files
-        uses: andstor/file-existence-action@87d74d4732ddb824259d80c8a508c0124bf1c673
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          files: "composer.json"
+          node-version: ${{ env.NODE_VERSION }}
 
       - name: Get Composer Cache Directory
         id: composer-cache
-        if: steps.check_files.outputs.files_exists == 'true'
         run: |
           echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
 
       - name: Set up dependency caching for faster installs
-        uses: actions/cache@v3
-        if: steps.check_files.outputs.files_exists == 'true'
+        uses: actions/cache@v4
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
           key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
           restore-keys: |
             ${{ runner.os }}-composer-
 
-      - name: Run composer install if composer.json exists
-        if: steps.check_files.outputs.files_exists == 'true'
-        run: composer validate --no-check-publish && composer install --prefer-dist --no-progress
+      - name: Install PHP dependencies
+        run: |
+          composer validate --no-check-publish --strict
+          composer install --no-dev --prefer-dist --no-progress --optimize-autoloader
+
+      - name: Build frontend assets
+        run: |
+          npm install --ignore-scripts
+          npm run build
+
+      - name: Prepare deployment package
+        run: |
+          mkdir -p "${AZURE_WEBAPP_PACKAGE_PATH}"
+          rsync -a --delete \
+            --exclude="${AZURE_WEBAPP_PACKAGE_PATH}" \
+            --exclude=".git" \
+            --exclude=".github" \
+            --exclude=".env" \
+            --exclude="node_modules" \
+            --exclude="tests" \
+            --exclude=".phpunit.cache" \
+            ./ "${AZURE_WEBAPP_PACKAGE_PATH}/"
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: php-app
-          path: .
+          path: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
 
   deploy:
     permissions:
@@ -92,7 +117,7 @@ jobs:
 
       - name: "Deploy to Azure Web App"
         id: deploy-to-webapp
-        uses: azure/webapps-deploy@v2
+        uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
