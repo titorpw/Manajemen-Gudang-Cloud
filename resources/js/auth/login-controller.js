@@ -2,6 +2,8 @@ import { ApiClient } from '../services/api';
 import { ToastService } from '../services/toast';
 import { Validator } from '../utils/validation';
 import { ThemeService } from '../services/theme';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth, isConfigured } from '../services/firebase';
 
 export class LoginController {
     constructor(config = {}) {
@@ -162,6 +164,11 @@ export class LoginController {
     async handleSubmit(e) {
         e.preventDefault();
 
+        if (!isConfigured) {
+            ToastService.error("Konfigurasi Firebase belum terpasang di file .env. Silakan atur VITE_FIREBASE_* terlebih dahulu.");
+            return;
+        }
+
         const isEmailValid = this.validateEmailField();
         const isPasswordValid = this.validatePasswordField();
 
@@ -172,33 +179,54 @@ export class LoginController {
 
         this.setLoading(true);
 
-        const response = await ApiClient.post('/api/login', {
-            email: this.state.email,
-            password: this.state.password
-        });
+        try {
+            const userCredential = await signInWithEmailAndPassword(auth, this.state.email, this.state.password);
+            const firebaseToken = await userCredential.user.getIdToken();
+            const response = await ApiClient.post('/api/login', {
+                firebase_token: firebaseToken
+            });
 
-        if (response.success) {
-            const data = response.data;
+            if (response.success) {
+                const data = response.data;
 
-            this.state.rememberMe = this.rememberMeCheckbox ? this.rememberMeCheckbox.checked : false;
-            if (this.state.rememberMe) {
-                localStorage.setItem('remember_email', this.state.email);
+                this.state.rememberMe = this.rememberMeCheckbox ? this.rememberMeCheckbox.checked : false;
+                if (this.state.rememberMe) {
+                    localStorage.setItem('remember_email', this.state.email);
+                } else {
+                    localStorage.removeItem('remember_email');
+                }
+
+                localStorage.setItem('access_token', data.access_token);
+                localStorage.setItem('user_role', data.user.role);
+
+                ToastService.success(`Login berhasil! Selamat datang, ${data.user.name}.`);
+
+                setTimeout(() => {
+                    window.location.href = '/dashboard';
+                }, 1500);
             } else {
-                localStorage.removeItem('remember_email');
+                ToastService.error(response.message);
+                this.setLoading(false);
+                this.passwordInput.value = '';
+                this.passwordInput.focus();
+                this.validatePasswordField();
+            }
+        } catch (firebaseError) {
+            console.error('Firebase Auth Error:', firebaseError);
+
+            let userFriendlyMsg = "Email atau password salah.";
+            if (firebaseError.code === 'auth/invalid-credential' || firebaseError.code === 'auth/wrong-password' || firebaseError.code === 'auth/user-not-found') {
+                userFriendlyMsg = "Kredensial salah atau akun tidak terdaftar.";
+            } else if (firebaseError.code === 'auth/too-many-requests') {
+                userFriendlyMsg = "Terlalu banyak percobaan login gagal. Silakan coba lagi nanti.";
+            } else if (firebaseError.code === 'auth/network-request-failed') {
+                userFriendlyMsg = "Gagal terhubung ke Firebase. Periksa koneksi internet Anda.";
+            } else if (firebaseError.message) {
+                userFriendlyMsg = firebaseError.message;
             }
 
-            localStorage.setItem('access_token', data.access_token);
-            localStorage.setItem('user_role', data.user.role);
-
-            ToastService.success(`Login berhasil! Selamat datang, ${data.user.name}.`);
-
-            setTimeout(() => {
-                window.location.href = '/dashboard';
-            }, 1500);
-        } else {
-            ToastService.error(response.message);
+            ToastService.error(userFriendlyMsg);
             this.setLoading(false);
-
             this.passwordInput.value = '';
             this.passwordInput.focus();
             this.validatePasswordField();
