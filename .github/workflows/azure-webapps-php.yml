@@ -6,6 +6,11 @@ on:
       - setup-cicd
   workflow_dispatch:
 
+env:
+  AZURE_WEBAPP_NAME: ManajemenGudang
+  PHP_VERSION: "8.4"
+  NODE_VERSION: "24"
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -18,7 +23,13 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: "8.4"
+          php-version: ${{ env.PHP_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
 
       - name: Check if composer.json exists
         id: check_files
@@ -28,13 +39,31 @@ jobs:
 
       - name: Run composer install if composer.json exists
         if: steps.check_files.outputs.files_exists == 'true'
-        run: composer validate --no-check-publish && composer install --prefer-dist --no-progress
+        run: composer validate --no-check-publish && composer install --prefer-dist --no-progress --no-interaction
+
+      - name: Build frontend assets
+        run: npm ci --ignore-scripts && npm run build
+
+      - name: Run tests
+        run: php artisan test
+        env:
+          APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+
+      - name: Install production Composer dependencies
+        if: steps.check_files.outputs.files_exists == 'true'
+        run: composer install --no-dev --prefer-dist --no-progress --no-interaction --optimize-autoloader
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: php-app
-          path: .
+          include-hidden-files: true
+          path: |
+            .
+            !.env
+            !node_modules
+            !tests
+            !.git
 
   deploy:
     runs-on: ubuntu-latest
@@ -50,7 +79,7 @@ jobs:
         uses: azure/webapps-deploy@v3
         id: deploy-to-webapp
         with:
-          app-name: "ManajemenGudang"
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
           slot-name: "Production"
           package: .
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
