@@ -3,8 +3,17 @@ set -euo pipefail
 
 NGINX_CONF="/etc/nginx/sites-available/default"
 LARAVEL_PUBLIC_ROOT="/home/site/wwwroot/public"
+APP_ROOT="/home/site/wwwroot"
 
 echo "Configuring NGINX for Laravel public root: ${LARAVEL_PUBLIC_ROOT}"
+
+if [ -d "${APP_ROOT}/bootstrap/cache" ]; then
+    echo "Clearing cached Laravel bootstrap files"
+    rm -f "${APP_ROOT}"/bootstrap/cache/config.php \
+        "${APP_ROOT}"/bootstrap/cache/routes-v7.php \
+        "${APP_ROOT}"/bootstrap/cache/events.php \
+        "${APP_ROOT}"/bootstrap/cache/views.php
+fi
 
 if [ ! -f "${NGINX_CONF}" ]; then
     echo "NGINX config not found: ${NGINX_CONF}" >&2

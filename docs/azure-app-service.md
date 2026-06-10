@@ -19,12 +19,23 @@ Set these in **Configuration > Environment variables**:
 ```text
 APP_ENV=production
 APP_DEBUG=false
-APP_URL=https://<app-name>.azurewebsites.net
+APP_URL=https://manajemengudang-ecfabth4b8bdf3eh.southeastasia-01.azurewebsites.net
 APP_KEY=<generated Laravel key>
 SESSION_DRIVER=file
 CACHE_STORE=file
 QUEUE_CONNECTION=sync
 ```
+
+In Azure Portal, set `APP_KEY` as:
+
+```text
+Name: APP_KEY
+Value: base64:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx=
+```
+
+If Azure logs still show `Encrypter->__construct('APP_KEY=base64:...', ...)` after fixing the setting, restart the App Service. `startup.sh` removes cached Laravel config from `bootstrap/cache/config.php` so stale settings are not reused.
+
+Keep `APP_URL` on `https://`. Azure terminates TLS before PHP, and `bootstrap/app.php` trusts Azure's `X-Forwarded-Proto` headers so Laravel generates HTTPS asset URLs instead of blocked mixed-content HTTP URLs.
 
 Generate `APP_KEY` once with:
 
