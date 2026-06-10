@@ -37,3 +37,6 @@ public_html/hot
 
 # Firebase credentials
 /storage/app/firebase/firebase_credentials.json
+
+# Khusus Tito karena pakai bun
+bun.lock
