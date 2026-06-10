@@ -53,6 +53,14 @@ jobs:
         if: steps.check_files.outputs.files_exists == 'true'
         run: composer install --no-dev --prefer-dist --no-progress --no-interaction --optimize-autoloader
 
+      - name: Verify deployment artifact contents
+        run: |
+          test -f startup.sh
+          test -f public/index.php
+          test -f vendor/autoload.php
+          test -f public/build/manifest.json
+          ls -la startup.sh public/index.php vendor/autoload.php public/build/manifest.json
+
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
@@ -74,6 +82,14 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: php-app
+
+      - name: Verify downloaded artifact contents
+        run: |
+          test -f startup.sh
+          test -f public/index.php
+          test -f vendor/autoload.php
+          test -f public/build/manifest.json
+          ls -la startup.sh public/index.php vendor/autoload.php public/build/manifest.json
 
       - name: "Deploy to Azure Web App"
         uses: azure/webapps-deploy@v3
