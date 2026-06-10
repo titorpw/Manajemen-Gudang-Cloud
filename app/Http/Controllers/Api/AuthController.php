@@ -28,6 +28,8 @@ class AuthController extends Controller
         try {
             $verifiedIdToken = $this->firebaseAuth->verifyIdToken(
                 $request->firebase_token,
+                false,
+                120,
             );
             $firebaseUid = $verifiedIdToken->claims()->get("sub");
 
