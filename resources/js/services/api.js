@@ -5,19 +5,24 @@ export class ApiClient {
     }
 
     static async request(url, options = {}) {
+        const token = localStorage.getItem('access_token');
         const headers = {
-            'Content-Type': 'application/json',
             'Accept': 'application/json',
             'X-CSRF-TOKEN': this.getCsrfToken(),
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
             ...(options.headers || {})
         };
+
+        if (!(options.body instanceof FormData)) {
+            headers['Content-Type'] = 'application/json';
+        }
 
         const config = {
             ...options,
             headers
         };
 
-        if (config.body && typeof config.body === 'object') {
+        if (config.body && typeof config.body === 'object' && !(config.body instanceof FormData)) {
             config.body = JSON.stringify(config.body);
         }
 
