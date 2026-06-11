@@ -202,7 +202,7 @@ export class LoginController {
                 ToastService.success(`Login berhasil! Selamat datang, ${data.user.name}.`);
 
                 setTimeout(() => {
-                    window.location.href = '/dashboard';
+                    window.location.href = '/katalog';
                 }, 1500);
             } else {
                 ToastService.error(response.message);

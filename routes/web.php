@@ -11,5 +11,9 @@ Route::get("/login", function () {
 });
 
 Route::get('/dashboard', function () {
-    return view('dashboard');
+    return redirect('/katalog');
+});
+
+Route::get('/katalog', function () {
+    return view('katalog');
 });
