@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ItemController;
+use App\Http\Controllers\Api\MutationController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -21,4 +22,8 @@ Route::middleware("auth:sanctum")->group(function () {
     Route::put("/barang/{id}", [ItemController::class, "update"]);
 
     Route::delete("/barang/{id}", [ItemController::class, "destroy"]);
+
+    Route::get("/mutasi", [MutationController::class, "index"]);
+
+    Route::post("/mutasi", [MutationController::class, "store"]);
 });
