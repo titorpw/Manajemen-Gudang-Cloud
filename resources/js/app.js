@@ -1,6 +1,7 @@
 import { LoginController } from './auth/login-controller';
 import { KatalogController } from './katalog/katalog-controller';
 import { MutasiController } from './mutasi/mutasi-controller';
+import { DashboardController } from './dashboard/dashboard-controller';
 import { ApiClient } from './services/api';
 import { ThemeService } from './services/theme';
 import { ToastService } from './services/toast';
@@ -103,12 +104,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const katalogPage = document.getElementById('katalogPage');
     const mutasiPage = document.getElementById('mutasiPage');
+    const dashboardPage = document.getElementById('dashboardPage');
     if (katalogPage) {
         const katalogController = new KatalogController();
         katalogController.init();
     } else if (mutasiPage) {
         const mutasiController = new MutasiController();
         mutasiController.init();
+    } else if (dashboardPage) {
+        const dashboardController = new DashboardController();
+        dashboardController.init();
     } else {
         const sidebar = document.getElementById('sidebar');
         if (sidebar) {
