@@ -12,63 +12,64 @@ class ItemController extends Controller
 {
     public function index()
     {
-        $items = Item::orderBy("created_at", "desc")->get();
+        $items = Item::orderBy('created_at', 'desc')->get();
+
         return response()->json(
-            $items->map(fn($item) => $this->transform($item)),
+            $items->map(fn ($item) => $this->transform($item)),
         );
     }
 
     public function store(Request $request)
     {
-        if ($request->user()->role !== "staf") {
+        if ($request->user()->role !== 'staf') {
             return response()->json(
-                ["message" => "Hanya Staf Gudang yang boleh mengubah data."],
+                ['message' => 'Hanya Staf Gudang yang boleh mengubah data.'],
                 403,
             );
         }
 
         $validator = Validator::make($request->all(), [
-            "kode_barang" => "required|string|unique:items,code",
-            "nama_barang" => "required|string",
-            "kategori" => "required|string",
-            "lokasi_rak" => "required|string",
-            "deskripsi" => "nullable|string",
-            "stok" => "required|integer|min:0",
-            "limit_stok" => "required|integer|min:0",
-            "foto" => "nullable|image|max:2048",
+            'kode_barang' => 'required|string|unique:items,code',
+            'nama_barang' => 'required|string',
+            'kategori' => 'required|string',
+            'lokasi_rak' => 'required|string',
+            'deskripsi' => 'nullable|string',
+            'stok' => 'required|integer|min:0',
+            'limit_stok' => 'required|integer|min:0',
+            'foto' => 'nullable|image|max:2048',
         ]);
 
         if ($validator->fails()) {
             return response()->json(
                 [
-                    "message" => "Validasi gagal.",
-                    "errors" => $validator->errors(),
+                    'message' => 'Validasi gagal.',
+                    'errors' => $validator->errors(),
                 ],
                 422,
             );
         }
 
         $imageUrl = null;
-        if ($request->hasFile("foto")) {
-            $path = $request->file("foto")->store("item_images", "public");
+        if ($request->hasFile('foto')) {
+            $path = $request->file('foto')->store('item_images', 'public');
             $imageUrl = Storage::url($path);
         }
 
         $item = Item::create([
-            "code" => $request->kode_barang,
-            "name" => $request->nama_barang,
-            "category" => $request->kategori,
-            "rack_location" => $request->lokasi_rak,
-            "description" => $request->deskripsi,
-            "stock" => $request->stok,
-            "stock_limit" => $request->limit_stok,
-            "image_url" => $imageUrl,
+            'code' => $request->kode_barang,
+            'name' => $request->nama_barang,
+            'category' => $request->kategori,
+            'rack_location' => $request->lokasi_rak,
+            'description' => $request->deskripsi,
+            'stock' => $request->stok,
+            'stock_limit' => $request->limit_stok,
+            'image_url' => $imageUrl,
         ]);
 
         return response()->json(
             [
-                "message" => "Barang berhasil ditambahkan.",
-                "data" => $this->transform($item),
+                'message' => 'Barang berhasil ditambahkan.',
+                'data' => $this->transform($item),
             ],
             201,
         );
@@ -76,105 +77,106 @@ class ItemController extends Controller
 
     public function update(Request $request, int $id)
     {
-        if ($request->user()->role !== "staf") {
+        if ($request->user()->role !== 'staf') {
             return response()->json(
-                ["message" => "Hanya Staf Gudang yang boleh mengubah data."],
+                ['message' => 'Hanya Staf Gudang yang boleh mengubah data.'],
                 403,
             );
         }
 
         $item = Item::find($id);
-        if (!$item) {
+        if (! $item) {
             return response()->json(
-                ["message" => "Barang tidak ditemukan."],
+                ['message' => 'Barang tidak ditemukan.'],
                 404,
             );
         }
 
         $validator = Validator::make($request->all(), [
-            "kode_barang" => "required|string|unique:items,code," . $id,
-            "nama_barang" => "required|string",
-            "kategori" => "required|string",
-            "lokasi_rak" => "required|string",
-            "deskripsi" => "nullable|string",
-            "limit_stok" => "required|integer|min:0",
-            "foto" => "nullable|image|max:2048",
+            'kode_barang' => 'required|string|unique:items,code,'.$id,
+            'nama_barang' => 'required|string',
+            'kategori' => 'required|string',
+            'lokasi_rak' => 'required|string',
+            'deskripsi' => 'nullable|string',
+            'limit_stok' => 'required|integer|min:0',
+            'foto' => 'nullable|image|max:2048',
         ]);
 
         if ($validator->fails()) {
             return response()->json(
                 [
-                    "message" => "Validasi gagal.",
-                    "errors" => $validator->errors(),
+                    'message' => 'Validasi gagal.',
+                    'errors' => $validator->errors(),
                 ],
                 422,
             );
         }
 
-        if ($request->hasFile("foto")) {
+        if ($request->hasFile('foto')) {
             if ($item->image_url) {
-                Storage::disk("public")->delete(
-                    str_replace("/storage/", "", $item->image_url),
+                Storage::disk('public')->delete(
+                    str_replace('/storage/', '', $item->image_url),
                 );
             }
-            $path = $request->file("foto")->store("item_images", "public");
+            $path = $request->file('foto')->store('item_images', 'public');
             $item->image_url = Storage::url($path);
         }
 
         $item->update([
-            "code" => $request->kode_barang,
-            "name" => $request->nama_barang,
-            "category" => $request->kategori,
-            "rack_location" => $request->lokasi_rak,
-            "description" => $request->deskripsi,
-            "stock_limit" => $request->limit_stok,
+            'code' => $request->kode_barang,
+            'name' => $request->nama_barang,
+            'category' => $request->kategori,
+            'rack_location' => $request->lokasi_rak,
+            'description' => $request->deskripsi,
+            'stock_limit' => $request->limit_stok,
         ]);
 
         return response()->json([
-            "message" => "Barang berhasil diperbarui.",
-            "data" => $this->transform($item),
+            'message' => 'Barang berhasil diperbarui.',
+            'data' => $this->transform($item),
         ]);
     }
 
     public function destroy(Request $request, int $id)
     {
-        if ($request->user()->role !== "staf") {
+        if ($request->user()->role !== 'staf') {
             return response()->json(
-                ["message" => "Hanya Staf Gudang yang boleh mengubah data."],
+                ['message' => 'Hanya Staf Gudang yang boleh mengubah data.'],
                 403,
             );
         }
 
         $item = Item::find($id);
-        if (!$item) {
+        if (! $item) {
             return response()->json(
-                ["message" => "Barang tidak ditemukan."],
+                ['message' => 'Barang tidak ditemukan.'],
                 404,
             );
         }
 
         if ($item->image_url) {
-            Storage::disk("public")->delete(
-                str_replace("/storage/", "", $item->image_url),
+            Storage::disk('public')->delete(
+                str_replace('/storage/', '', $item->image_url),
             );
         }
 
         $item->delete();
-        return response()->json(["message" => "Barang berhasil dihapus."]);
+
+        return response()->json(['message' => 'Barang berhasil dihapus.']);
     }
 
     private function transform(Item $item)
     {
         return [
-            "id" => $item->id,
-            "kode_barang" => $item->code,
-            "nama_barang" => $item->name,
-            "kategori" => $item->category,
-            "lokasi_rak" => $item->rack_location,
-            "deskripsi" => $item->description,
-            "stok" => $item->stock,
-            "limit_stok" => $item->stock_limit,
-            "foto_url" => $item->image_url,
+            'id' => $item->id,
+            'kode_barang' => $item->code,
+            'nama_barang' => $item->name,
+            'kategori' => $item->category,
+            'lokasi_rak' => $item->rack_location,
+            'deskripsi' => $item->description,
+            'stok' => $item->stock,
+            'limit_stok' => $item->stock_limit,
+            'foto_url' => $item->image_url,
         ];
     }
 }

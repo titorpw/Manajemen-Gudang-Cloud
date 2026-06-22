@@ -13,39 +13,38 @@ class MutationController extends Controller
 {
     public function index()
     {
-        $mutations = Mutation::with(["item", "user"])
-            ->orderBy("created_at", "desc")
+        $mutations = Mutation::with(['item', 'user'])
+            ->orderBy('created_at', 'desc')
             ->get();
 
         return response()->json(
-            $mutations->map(fn($m) => $this->transform($m)),
+            $mutations->map(fn ($m) => $this->transform($m)),
         );
     }
 
     public function store(Request $request)
     {
-        if ($request->user()->role !== "staf") {
+        if ($request->user()->role !== 'staf') {
             return response()->json(
                 [
-                    "message" =>
-                        "Hanya Staf Gudang yang boleh menginput mutasi barang.",
+                    'message' => 'Hanya Staf Gudang yang boleh menginput mutasi barang.',
                 ],
                 403,
             );
         }
 
         $validator = Validator::make($request->all(), [
-            "item_id" => "required|integer|exists:items,id",
-            "type" => "required|string|in:IN,OUT",
-            "quantity" => "required|integer|min:1",
-            "note" => "nullable|string",
+            'item_id' => 'required|integer|exists:items,id',
+            'type' => 'required|string|in:IN,OUT',
+            'quantity' => 'required|integer|min:1',
+            'note' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
             return response()->json(
                 [
-                    "message" => "Validasi gagal.",
-                    "errors" => $validator->errors(),
+                    'message' => 'Validasi gagal.',
+                    'errors' => $validator->errors(),
                 ],
                 422,
             );
@@ -54,16 +53,15 @@ class MutationController extends Controller
         return DB::transaction(function () use ($request) {
             $item = Item::lockForUpdate()->find($request->item_id);
 
-            if ($request->type === "OUT" && $item->stock < $request->quantity) {
+            if ($request->type === 'OUT' && $item->stock < $request->quantity) {
                 return response()->json(
                     [
-                        "message" =>
-                            "Transaksi ditolak. Stok barang saat ini tidak mencukupi.",
-                        "errors" => [
-                            "quantity" => [
-                                "Stok saat ini hanya tersedia " .
-                                $item->stock .
-                                " unit.",
+                        'message' => 'Transaksi ditolak. Stok barang saat ini tidak mencukupi.',
+                        'errors' => [
+                            'quantity' => [
+                                'Stok saat ini hanya tersedia '.
+                                $item->stock.
+                                ' unit.',
                             ],
                         ],
                     ],
@@ -71,7 +69,7 @@ class MutationController extends Controller
                 );
             }
 
-            if ($request->type === "IN") {
+            if ($request->type === 'IN') {
                 $item->stock += $request->quantity;
             } else {
                 $item->stock -= $request->quantity;
@@ -79,19 +77,18 @@ class MutationController extends Controller
             $item->save();
 
             $mutation = Mutation::create([
-                "item_id" => $request->item_id,
-                "user_id" => $request->user()->id,
-                "type" => $request->type,
-                "quantity" => $request->quantity,
-                "note" => $request->note,
+                'item_id' => $request->item_id,
+                'user_id' => $request->user()->id,
+                'type' => $request->type,
+                'quantity' => $request->quantity,
+                'note' => $request->note,
             ]);
 
             return response()->json(
                 [
-                    "message" =>
-                        "Transaksi mutasi berhasil dicatat dan stok telah diperbarui.",
-                    "data" => $this->transform(
-                        $mutation->load(["item", "user"]),
+                    'message' => 'Transaksi mutasi berhasil dicatat dan stok telah diperbarui.',
+                    'data' => $this->transform(
+                        $mutation->load(['item', 'user']),
                     ),
                 ],
                 201,
@@ -102,15 +99,15 @@ class MutationController extends Controller
     private function transform(Mutation $mutation)
     {
         return [
-            "id" => $mutation->id,
-            "item_id" => $mutation->item_id,
-            "kode_barang" => $mutation->item->code ?? "-",
-            "nama_barang" => $mutation->item->name ?? "Barang Terhapus",
-            "staf_gudang" => $mutation->user->name ?? "-",
-            "jenis_mutasi" => $mutation->type,
-            "jumlah" => $mutation->quantity,
-            "keterangan" => $mutation->note,
-            "tanggal_input" => $mutation->created_at->toIso8601String(),
+            'id' => $mutation->id,
+            'item_id' => $mutation->item_id,
+            'kode_barang' => $mutation->item->code ?? '-',
+            'nama_barang' => $mutation->item->name ?? 'Barang Terhapus',
+            'staf_gudang' => $mutation->user->name ?? '-',
+            'jenis_mutasi' => $mutation->type,
+            'jumlah' => $mutation->quantity,
+            'keterangan' => $mutation->note,
+            'tanggal_input' => $mutation->created_at->toIso8601String(),
         ];
     }
 }

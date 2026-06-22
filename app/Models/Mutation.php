@@ -9,12 +9,12 @@ class Mutation extends Model
 {
     use HasFactory;
 
-    protected $fillable = ["item_id", "user_id", "type", "quantity", "note"];
+    protected $fillable = ['item_id', 'user_id', 'type', 'quantity', 'note'];
 
     protected $casts = [
-        "quantity" => "integer",
-        "item_id" => "integer",
-        "user_id" => "integer",
+        'quantity' => 'integer',
+        'item_id' => 'integer',
+        'user_id' => 'integer',
     ];
 
     public function item()

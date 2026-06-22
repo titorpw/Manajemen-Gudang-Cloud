@@ -1,5 +1,6 @@
 import { LoginController } from './auth/login-controller';
 import { KatalogController } from './katalog/katalog-controller';
+import { MutasiController } from './mutasi/mutasi-controller';
 import { ApiClient } from './services/api';
 import { ThemeService } from './services/theme';
 import { ToastService } from './services/toast';
@@ -60,7 +61,8 @@ async function initDashboardLayout() {
     const userInitialEl = document.getElementById('userInitial');
 
     const storedRole = localStorage.getItem('user_role') || 'staf';
-    let name = storedRole === 'staf' ? 'Ahmad Staf Gudang' : 'Hendra Manager';
+    const storedName = localStorage.getItem('user_name') || (storedRole === 'staf' ? 'Ahmad Staf Gudang' : 'Hendra Manager');
+    let name = storedName;
     let role = storedRole;
 
     try {
@@ -74,6 +76,7 @@ async function initDashboardLayout() {
         console.warn("Gagal terhubung ke API, menggunakan profil offline.");
     }
 
+    localStorage.setItem('user_name', name);
     if (userNameEl) userNameEl.textContent = name;
     if (welcomeUserNameEl) welcomeUserNameEl.textContent = name;
     if (userInitialEl) userInitialEl.textContent = name.charAt(0).toUpperCase();
@@ -88,6 +91,10 @@ async function initDashboardLayout() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+        document.body.classList.remove('no-transition');
+    }, 150);
+
     const loginForm = document.getElementById('loginForm');
     if (loginForm) {
         const loginController = new LoginController();
@@ -95,9 +102,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const katalogPage = document.getElementById('katalogPage');
+    const mutasiPage = document.getElementById('mutasiPage');
     if (katalogPage) {
         const katalogController = new KatalogController();
         katalogController.init();
+    } else if (mutasiPage) {
+        const mutasiController = new MutasiController();
+        mutasiController.init();
     } else {
         const sidebar = document.getElementById('sidebar');
         if (sidebar) {

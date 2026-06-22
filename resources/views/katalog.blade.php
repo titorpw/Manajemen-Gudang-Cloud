@@ -2,6 +2,17 @@
 <html lang="id">
 
 <head>
+    <script>
+        (function () {
+            const savedTheme = localStorage.getItem('gudang_cloud_theme');
+            const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        })();
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -14,6 +25,11 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     <style>
+        .no-transition, .no-transition * {
+            transition: none !important;
+            animation: none !important;
+        }
+
         body {
             font-family: 'Instrument Sans', sans-serif;
         }
@@ -135,7 +151,7 @@
     </style>
 </head>
 
-<body class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 min-h-screen md:h-screen md:overflow-hidden flex flex-col md:flex-row relative overflow-x-hidden selection:bg-blue-500/30 selection:text-blue-200 transition-colors duration-300">
+<body class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 min-h-screen md:h-screen md:overflow-hidden flex flex-col md:flex-row relative overflow-x-hidden selection:bg-blue-500/30 selection:text-blue-200 transition-colors duration-300 no-transition">
 
     <script>
         (function() {
@@ -168,6 +184,17 @@
     <div id="sidebarOverlay" class="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 z-30 opacity-0 pointer-events-none transition-opacity duration-300 md:hidden"></div>
 
     <aside id="sidebar" class="fixed md:static inset-y-0 left-0 w-72 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col justify-between p-6 z-40 transform -translate-x-full md:translate-x-0 transition-transform duration-300 md:transition-none shadow-2xl md:shadow-none h-full">
+        <script>
+            (function() {
+                if (localStorage.getItem('sidebar_collapsed') === 'true' && window.innerWidth >= 768) {
+                    const sidebar = document.getElementById('sidebar');
+                    if (sidebar) {
+                        sidebar.classList.remove('w-72');
+                        sidebar.classList.add('w-20');
+                    }
+                }
+            })();
+        </script>
         <div class="flex flex-col gap-8">
 
             <div class="flex items-center justify-between gap-3 logo-container">
@@ -206,15 +233,12 @@
                     </svg>
                     <span class="link-text">Katalog Barang</span>
                 </a>
-                <div class="flex items-center justify-between px-4 py-3 rounded-xl text-slate-400 dark:text-slate-600 font-medium cursor-not-allowed select-none">
-                    <div class="flex items-center gap-3">
-                        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                        </svg>
-                        <span class="link-text">Mutasi Stok</span>
-                    </div>
-                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-500 tracking-wide uppercase scale-90 link-badge">Soon</span>
-                </div>
+                <a href="/mutasi" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-200 transition-all duration-200 font-medium cursor-pointer">
+                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                    </svg>
+                    <span class="link-text">Mutasi Stok</span>
+                </a>
             </nav>
         </div>
 
@@ -222,12 +246,33 @@
 
             <div class="flex items-center gap-3 px-2 user-profile-container">
                 <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-slate-200 to-slate-300 dark:from-slate-800 dark:to-slate-700 flex items-center justify-center shadow-sm shrink-0">
-                    <span id="userInitial" class="font-bold text-sm text-slate-700 dark:text-slate-300">U</span>
+                    <span id="userInitial" class="font-bold text-sm text-slate-700 dark:text-slate-300">&nbsp;</span>
                 </div>
                 <div class="flex flex-col min-w-0 flex-1 user-info-text">
-                    <span id="userName" class="font-bold text-sm text-slate-800 dark:text-slate-200 truncate">Nama User</span>
-                    <span id="userRoleBadge" class="inline-flex self-start px-2 py-0.5 rounded text-[10px] font-bold tracking-wide uppercase mt-1">Staf</span>
+                    <span id="userName" class="font-bold text-sm text-slate-800 dark:text-slate-200 truncate">&nbsp;</span>
+                    <span id="userRoleBadge" class="inline-flex self-start px-2 py-0.5 rounded text-[10px] font-bold tracking-wide uppercase mt-1 opacity-0">&nbsp;</span>
                 </div>
+                <script>
+                    (function() {
+                        const storedName = localStorage.getItem('user_name');
+                        const storedRole = localStorage.getItem('user_role');
+                        if (storedName) {
+                            document.getElementById('userName').textContent = storedName;
+                            document.getElementById('userInitial').textContent = storedName.charAt(0).toUpperCase();
+                        }
+                        if (storedRole) {
+                            const badge = document.getElementById('userRoleBadge');
+                            if (badge) {
+                                badge.textContent = storedRole === 'staf' ? 'Staf Gudang (Admin)' : 'Manager Gudang';
+                                if (storedRole === 'staf') {
+                                    badge.className = "inline-flex self-start px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide uppercase mt-1.5 bg-blue-500/10 text-blue-500 dark:bg-blue-500/20";
+                                } else {
+                                    badge.className = "inline-flex self-start px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide uppercase mt-1.5 bg-amber-500/10 text-amber-500 dark:bg-amber-500/20";
+                                }
+                            }
+                        }
+                    })();
+                </script>
             </div>
 
             <div class="flex gap-2 sidebar-actions">
@@ -354,7 +399,7 @@
                 </table>
             </div>
 
-            <div id="tabelEmptyState" class="hidden flex-col items-center justify-center p-12 text-center text-slate-500 dark:text-slate-400">
+            <div id="tabelEmptyState" class="hidden flex flex-col items-center justify-center p-12 text-center text-slate-500 dark:text-slate-400">
                 <svg class="w-16 h-16 text-slate-300 dark:text-slate-700 mb-4 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                 </svg>

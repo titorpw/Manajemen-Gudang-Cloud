@@ -198,6 +198,7 @@ export class LoginController {
 
                 localStorage.setItem('access_token', data.access_token);
                 localStorage.setItem('user_role', data.user.role);
+                localStorage.setItem('user_name', data.user.name);
 
                 ToastService.success(`Login berhasil! Selamat datang, ${data.user.name}.`);
 

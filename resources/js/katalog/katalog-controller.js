@@ -9,7 +9,11 @@ export class KatalogController {
             filteredItems: [],
             categories: ['Elektronik', 'Peralatan', 'Suku Cadang', 'Bahan Baku', 'ATK', 'Lainnya'],
             uniqueRacks: [],
-            user: { name: 'User Gudang', role: 'staf', email: '' },
+            user: { 
+                name: localStorage.getItem('user_name') || 'User Gudang', 
+                role: localStorage.getItem('user_role') || 'staf', 
+                email: '' 
+            },
             currentPage: 1,
             itemsPerPage: 5,
             totalPages: 1,
@@ -306,9 +310,9 @@ export class KatalogController {
 
     async loadUser() {
         const storedRole = localStorage.getItem('user_role') || 'staf';
+        const storedName = localStorage.getItem('user_name') || (storedRole === 'staf' ? 'Ahmad Staf Gudang' : 'Hendra Manager');
         this.state.user.role = storedRole;
-
-        if (this.userNameEl) this.userNameEl.textContent = 'Memuat profil...';
+        this.state.user.name = storedName;
 
         try {
 
@@ -328,6 +332,7 @@ export class KatalogController {
             this.state.user.name = storedRole === 'staf' ? 'Ahmad Staf Gudang' : 'Hendra Manager';
         }
 
+        localStorage.setItem('user_name', this.state.user.name);
         if (this.userNameEl) this.userNameEl.textContent = this.state.user.name;
         if (this.welcomeUserNameEl) this.welcomeUserNameEl.textContent = this.state.user.name;
         if (this.userInitialEl) this.userInitialEl.textContent = this.state.user.name.charAt(0).toUpperCase();

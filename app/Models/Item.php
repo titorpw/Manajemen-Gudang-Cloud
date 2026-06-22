@@ -10,18 +10,18 @@ class Item extends Model
     use HasFactory;
 
     protected $fillable = [
-        "code",
-        "name",
-        "category",
-        "rack_location",
-        "description",
-        "stock",
-        "stock_limit",
-        "image_url",
+        'code',
+        'name',
+        'category',
+        'rack_location',
+        'description',
+        'stock',
+        'stock_limit',
+        'image_url',
     ];
 
     protected $casts = [
-        "stock" => "integer",
-        "stock_limit" => "integer",
+        'stock' => 'integer',
+        'stock_limit' => 'integer',
     ];
 }
