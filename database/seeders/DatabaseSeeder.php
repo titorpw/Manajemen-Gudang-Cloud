@@ -16,17 +16,17 @@ class DatabaseSeeder extends Seeder
         User::truncate();
 
         User::create([
-            "name" => "Budi Manager",
-            "email" => "budimanager@gmail.com",
-            "password" => Hash::make("password123"),
-            "role" => "manager",
+            'name' => 'Budi Manager',
+            'email' => 'budimanager@gmail.com',
+            'password' => Hash::make('password123'),
+            'role' => 'manager',
         ]);
 
         User::create([
-            "name" => "Siti Staff",
-            "email" => "sitistaff@gmail.com",
-            "password" => Hash::make("password123"),
-            "role" => "staf",
+            'name' => 'Siti Staff',
+            'email' => 'sitistaff@gmail.com',
+            'password' => Hash::make('password123'),
+            'role' => 'staf',
         ]);
     }
 }
