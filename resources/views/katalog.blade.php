@@ -338,7 +338,7 @@
                 <table class="w-full border-collapse text-left">
                     <thead>
                         <tr class="bg-slate-100/80 dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-500 text-xs font-bold tracking-wider uppercase">
-                            <th class="px-6 py-4.5">Foto</th>
+                            <th class="px-6 py-4.5 text-center">Foto</th>
                             <th class="px-6 py-4.5">Kode</th>
                             <th class="px-6 py-4.5">Nama Barang</th>
                             <th class="px-6 py-4.5">Kategori</th>
@@ -354,7 +354,7 @@
                 </table>
             </div>
 
-            <div id="tabelEmptyState" class="hidden flex-col items-center justify-center p-12 text-center text-slate-500 dark:text-slate-400">
+            <div id="tabelEmptyState" class="hidden flex flex-col items-center justify-center p-12 text-center text-slate-500 dark:text-slate-400">
                 <svg class="w-16 h-16 text-slate-300 dark:text-slate-700 mb-4 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                 </svg>
@@ -465,7 +465,7 @@
                             <span class="text-[10px] text-slate-400">Format yang didukung: JPG, PNG, JPEG, GIF (Maksimal 2 MB)</span>
                         </div>
 
-                        <div id="fotoPreviewContainer" class="hidden flex-col items-center justify-center space-y-3 relative group">
+                        <div id="fotoPreviewContainer" class="hidden flex flex-col items-center justify-center space-y-3 relative group">
                             <img id="fotoPreview" src="" alt="Pratinjau Foto" class="max-h-40 rounded-lg shadow-sm border border-slate-200 dark:border-slate-800 object-contain">
                             <button type="button" id="btnHapusPreview" class="absolute -top-2 -right-2 p-1 rounded-full bg-rose-600 text-white hover:bg-rose-500 shadow-md transition-colors cursor-pointer" title="Hapus foto">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

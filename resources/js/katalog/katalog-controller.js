@@ -577,7 +577,11 @@ export class KatalogController {
 
             html += `
                 <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-900/35 transition-colors duration-150">
-                    <td class="px-6 py-4.5 whitespace-nowrap">${imgHtml}</td>
+                    <td class="px-6 py-4.5 whitespace-nowrap text-center">
+                        <div class="flex justify-center">
+                            ${imgHtml}
+                        </div>
+                    </td>
                     <td class="px-6 py-4.5 whitespace-nowrap font-bold text-slate-900 dark:text-white tracking-wide">${item.kode_barang}</td>
                     <td class="px-6 py-4.5 font-semibold text-slate-800 dark:text-slate-200">
                         <div class="flex flex-col">
@@ -636,7 +640,11 @@ export class KatalogController {
         for (let i = 0; i < this.state.itemsPerPage; i++) {
             html += `
                 <tr class="animate-pulse border-b border-slate-100 dark:border-slate-800">
-                    <td class="px-6 py-5.5"><div class="w-10 h-10 bg-slate-200 dark:bg-slate-800 rounded-lg"></div></td>
+                    <td class="px-6 py-5.5 text-center">
+                        <div class="flex justify-center">
+                            <div class="w-10 h-10 bg-slate-200 dark:bg-slate-800 rounded-lg"></div>
+                        </div>
+                    </td>
                     <td class="px-6 py-5.5"><div class="h-4 bg-slate-200 dark:bg-slate-800 rounded w-20"></div></td>
                     <td class="px-6 py-5.5">
                         <div class="space-y-2">
