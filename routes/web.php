@@ -11,7 +11,7 @@ Route::get('/login', function () {
 });
 
 Route::get('/dashboard', function () {
-    return redirect('/katalog');
+    return view('dashboard');
 });
 
 Route::get('/katalog', function () {
