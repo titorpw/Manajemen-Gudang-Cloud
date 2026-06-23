@@ -233,6 +233,15 @@ export class DashboardController {
         let mutasiLoaded = false;
 
         try {
+            const statsResp = await ApiClient.get('/api/dashboard/stats');
+            if (statsResp) {
+                this.state.dashboardStats = statsResp.data || statsResp;
+            }
+        } catch(e) {
+            console.warn('Gagal mengambil data stats dashboard dari REST API.');
+        }
+
+        try {
             const response = await ApiClient.get('/api/barang');
             if (response.success && response.data) {
                 this.state.items = response.data.data || response.data;
@@ -349,7 +358,12 @@ export class DashboardController {
     renderLowStock() {
         if (!this.lowStockItemsList) return;
 
-        const lowStockItems = this.state.items.filter(item => Number(item.stok || 0) <= Number(item.limit_stok || 10));
+        let lowStockItems = [];
+        if (this.state.dashboardStats && !this.state.isMockMode && this.state.dashboardStats.stok_menipis) {
+            lowStockItems = this.state.dashboardStats.stok_menipis;
+        } else {
+            lowStockItems = this.state.items.filter(item => Number(item.stok || 0) <= Number(item.limit_stok || 10));
+        }
 
         if (lowStockItems.length === 0) {
             this.lowStockItemsList.innerHTML = `
@@ -364,15 +378,17 @@ export class DashboardController {
 
         let html = '';
         lowStockItems.forEach(item => {
-            const isZero = Number(item.stok) === 0;
+            const stokValue = item.stok !== undefined ? item.stok : item.stok_saat_ini;
+            const limitValue = item.limit_stok !== undefined ? item.limit_stok : item.batas_stok;
+            const isZero = Number(stokValue) === 0;
             const textClass = isZero ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-amber-600 dark:text-amber-400 font-bold';
 
             html += `
                 <tr class="border-b border-slate-100/50 dark:border-slate-800/50 hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors">
                     <td class="py-3 font-mono text-xs font-semibold text-slate-600 dark:text-slate-400">${item.kode_barang}</td>
                     <td class="py-3 font-semibold text-slate-850 dark:text-slate-200">${item.nama_barang}</td>
-                    <td class="py-3 text-center ${textClass}">${item.stok}</td>
-                    <td class="py-3 text-center text-slate-500 dark:text-slate-400">${item.limit_stok}</td>
+                    <td class="py-3 text-center ${textClass}">${stokValue}</td>
+                    <td class="py-3 text-center text-slate-500 dark:text-slate-400">${limitValue}</td>
                     <td class="py-3 text-slate-500 dark:text-slate-400">${item.lokasi_rak || '-'}</td>
                 </tr>
             `;
@@ -385,43 +401,57 @@ export class DashboardController {
         const ctx = document.getElementById('mutationsTrendChart');
         if (!ctx) return;
 
-        const dates = [];
-        for (let i = 6; i >= 0; i--) {
-            const d = new Date();
-            d.setDate(d.getDate() - i);
-            dates.push(d.toISOString().split('T')[0]);
-        }
+        let labels = [];
+        let dataIn = [];
+        let dataOut = [];
 
-        const inMap = {};
-        const outMap = {};
-        dates.forEach(d => {
-            inMap[d] = 0;
-            outMap[d] = 0;
-        });
-
-        this.state.mutations.forEach(m => {
-            const rawDate = m.tanggal_input || m.created_at;
-            if (!rawDate) return;
-            const dateStr = rawDate.split('T')[0];
-
-            if (inMap[dateStr] !== undefined) {
-                const qty = Number(m.jumlah || m.quantity || 0);
-                const type = m.jenis_mutasi || m.type;
-                if (type === 'IN') {
-                    inMap[dateStr] += qty;
-                } else if (type === 'OUT') {
-                    outMap[dateStr] += qty;
-                }
+        if (this.state.dashboardStats && !this.state.isMockMode && this.state.dashboardStats.grafik_mutasi) {
+            const chartData = this.state.dashboardStats.grafik_mutasi;
+            labels = chartData.labels.map(dateStr => {
+                const d = new Date(dateStr);
+                return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+            });
+            dataIn = chartData.dataset_in;
+            dataOut = chartData.dataset_out;
+        } else {
+            const dates = [];
+            for (let i = 6; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(d.getDate() - i);
+                dates.push(d.toISOString().split('T')[0]);
             }
-        });
 
-        const labels = dates.map(dateStr => {
-            const d = new Date(dateStr);
-            return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
-        });
+            const inMap = {};
+            const outMap = {};
+            dates.forEach(d => {
+                inMap[d] = 0;
+                outMap[d] = 0;
+            });
 
-        const dataIn = dates.map(d => inMap[d]);
-        const dataOut = dates.map(d => outMap[d]);
+            this.state.mutations.forEach(m => {
+                const rawDate = m.tanggal_input || m.created_at;
+                if (!rawDate) return;
+                const dateStr = rawDate.split('T')[0];
+
+                if (inMap[dateStr] !== undefined) {
+                    const qty = Number(m.jumlah || m.quantity || 0);
+                    const type = m.jenis_mutasi || m.type;
+                    if (type === 'IN') {
+                        inMap[dateStr] += qty;
+                    } else if (type === 'OUT') {
+                        outMap[dateStr] += qty;
+                    }
+                }
+            });
+
+            labels = dates.map(dateStr => {
+                const d = new Date(dateStr);
+                return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+            });
+
+            dataIn = dates.map(d => inMap[d]);
+            dataOut = dates.map(d => outMap[d]);
+        }
 
         const isDark = ThemeService.isDark();
         const fontColor = isDark ? '#94a3b8' : '#64748b';
