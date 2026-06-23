@@ -2,22 +2,20 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
+Route::redirect("/", "/login");
+
+Route::get("/login", function () {
+    return view("auth.login");
 });
 
-Route::get('/login', function () {
-    return view('auth.login');
+Route::get("/dashboard", function () {
+    return view("dashboard");
 });
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
+Route::get("/katalog", function () {
+    return view("katalog");
 });
 
-Route::get('/katalog', function () {
-    return view('katalog');
-});
-
-Route::get('/mutasi', function () {
-    return view('mutasi');
+Route::get("/mutasi", function () {
+    return view("mutasi");
 });
