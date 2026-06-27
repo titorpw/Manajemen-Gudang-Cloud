@@ -5,7 +5,9 @@
 - **Laravel 13** / PHP 8.3+ / Vite 8 / Tailwind CSS 4
 - SQLite default (`.env.example`), in-memory SQLite for tests
 - PHPUnit 12, Laravel Pint (no custom config — uses Laravel preset)
-- Deploy: Google Cloud Run via Docker + GitHub Actions
+- Deploy: Google Cloud Run via Docker + Cloud Build
+- Auth: Firebase Authentication (client-side) with stateless token validation
+- Secrets: Google Secret Manager (runtime injection via Cloud Run `--set-secrets`)
 - `.npmrc` sets `ignore-scripts=true` — `npm install` skips lifecycle scripts
 
 ## Commands
@@ -14,6 +16,7 @@
 | ---------------- | ------------------------------------------------------------------------------------------ |
 | First-time setup | `composer setup` (installs deps, generates .env + app key, runs migrations, builds assets) |
 | Full dev stack   | `composer dev` (artisan serve + queue:listen + pail + vite, concurrently)                  |
+| Local Docker     | `docker-compose up --build`                                                                |
 | Run tests        | `composer test` (clears config, then `php artisan test`)                                   |
 | Single test      | `php artisan test --filter=TestName`                                                       |
 | Format code      | `vendor/bin/pint`                                                                          |

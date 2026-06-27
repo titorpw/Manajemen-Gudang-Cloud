@@ -1,0 +1,87 @@
+steps:
+  - id: fetch-build-secrets
+    name: gcr.io/cloud-builders/gcloud
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        set -e
+        echo "Fetching Firebase client config from Secret Manager..."
+        gcloud secrets versions access latest --secret="firebase-client-config" --format='get(payload.data)' | tr '_-' '/+' | base64 -d > .env.production
+        echo ".env.production written for frontend build"
+
+  - id: build
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -t
+      - ${_ARTIFACT_REGISTRY_REPO}/${_SERVICE_NAME}:$SHORT_SHA
+      - -t
+      - ${_ARTIFACT_REGISTRY_REPO}/${_SERVICE_NAME}:latest
+      - .
+
+  - id: push
+    name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - ${_ARTIFACT_REGISTRY_REPO}/${_SERVICE_NAME}:$SHORT_SHA
+
+  - id: push-latest
+    name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - ${_ARTIFACT_REGISTRY_REPO}/${_SERVICE_NAME}:latest
+
+  - id: deploy
+    name: gcr.io/cloud-builders/gcloud
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        set -e
+        gcloud run deploy ${_SERVICE_NAME} \
+          --image=${_ARTIFACT_REGISTRY_REPO}/${_SERVICE_NAME}:$SHORT_SHA \
+          --region=${_REGION} \
+          --platform=managed \
+          --allow-unauthenticated \
+          --memory=${_MEMORY} \
+          --cpu=${_CPU} \
+          --min-instances=${_MIN_INSTANCES} \
+          --max-instances=${_MAX_INSTANCES} \
+          --concurrency=${_CONCURRENCY} \
+          --timeout=${_TIMEOUT} \
+          --set-env-vars=APP_ENV=production,APP_DEBUG=false \
+          --set-secrets=APP_KEY=app-key:latest \
+          --set-secrets=DB_PASSWORD=db-password:latest \
+          --set-secrets=GOOGLE_CLOUD_PROJECT_ID=gcs-project-id:latest \
+          --set-secrets=GOOGLE_CLOUD_STORAGE_BUCKET=gcs-bucket:latest \
+          --set-secrets=GOOGLE_CLOUD_STORAGE_PATH_PREFIX=gcs-path-prefix:latest \
+          --set-secrets=GOOGLE_CLOUD_STORAGE_API_URI=gcs-api-uri:latest \
+          --set-secrets=DB_DATABASE=db-database:latest \
+          --set-secrets=DB_USERNAME=db-username:latest \
+          --set-secrets=DB_HOST=db-host:latest \
+          --set-secrets=DB_PORT=db-port:latest \
+          --set-secrets=MAIL_MAILER=mail-mailer:latest \
+          --set-secrets=MAIL_HOST=mail-host:latest \
+          --set-secrets=MAIL_PORT=mail-port:latest \
+          --set-secrets=MAIL_USERNAME=mail-username:latest \
+          --set-secrets=MAIL_PASSWORD=mail-password:latest \
+          --set-secrets=MAIL_FROM_ADDRESS=mail-from-address:latest \
+          --set-secrets=MAIL_FROM_NAME=mail-from-name:latest \
+          --service-account=${_SERVICE_ACCOUNT}
+
+images:
+  - ${_ARTIFACT_REGISTRY_REPO}/${_SERVICE_NAME}:$SHORT_SHA
+  - ${_ARTIFACT_REGISTRY_REPO}/${_SERVICE_NAME}:latest
+
+substitutions:
+  _SERVICE_NAME: manajemen-gudang
+  _REGION: asia-southeast2
+  _ARTIFACT_REGISTRY_REPO: ${_REGION}-docker.pkg.dev/$PROJECT_ID/cloud-run
+  _MEMORY: 512Mi
+  _CPU: "1"
+  _MIN_INSTANCES: "0"
+  _MAX_INSTANCES: "10"
+  _CONCURRENCY: "80"
+  _TIMEOUT: "300s"
+  _SERVICE_ACCOUNT: ""
