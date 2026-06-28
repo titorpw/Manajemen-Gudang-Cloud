@@ -24,4 +24,5 @@ jobs:
       - name: Run Cloud Build Pipeline
         run: |
           gcloud builds submit --config=cloudbuild.yaml \
+            --suppress-logs \
             --substitutions=SHORT_SHA=${{ github.sha }}

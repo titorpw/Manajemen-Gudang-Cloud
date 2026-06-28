@@ -55,6 +55,7 @@ steps:
           --set-env-vars=APP_ENV=production,APP_DEBUG=false \
           --set-secrets=APP_KEY=app-key:latest \
           --set-secrets=DB_PASSWORD=db-password:latest \
+          --set-secrets=FIREBASE_CREDENTIALS=firebase-credentials:latest \
           --service-account=${_SERVICE_ACCOUNT}
 
 images:
