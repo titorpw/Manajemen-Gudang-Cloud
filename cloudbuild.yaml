@@ -52,7 +52,7 @@ steps:
           --max-instances=${_MAX_INSTANCES} \
           --concurrency=${_CONCURRENCY} \
           --timeout=${_TIMEOUT} \
-          --set-env-vars=APP_ENV=production,APP_DEBUG=false \
+          --set-env-vars=APP_ENV=production,APP_DEBUG=false,APP_URL=https://gudang.tech \
           --set-secrets=APP_KEY=app-key:latest \
           --set-secrets=DB_PASSWORD=db-password:latest \
           --set-secrets=FIREBASE_CREDENTIALS=firebase-credentials:latest \
