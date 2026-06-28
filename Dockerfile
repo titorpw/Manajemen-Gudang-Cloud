@@ -12,7 +12,7 @@ RUN npm run build && rm .env.production
 FROM dunglas/frankenphp:latest
 WORKDIR /app
 
-RUN install-php-extensions pdo_mysql gd
+RUN install-php-extensions pdo_mysql gd zip
 
 COPY . .
 COPY --from=frontend /app/public/build public/build
