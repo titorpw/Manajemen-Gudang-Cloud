@@ -79,7 +79,7 @@ images:
 substitutions:
   _SERVICE_NAME: manajemen-gudang
   _REGION: asia-southeast2
-  _ARTIFACT_REGISTRY_REPO: ${_REGION}-docker.pkg.dev/$PROJECT_ID/cloud-run
+  _ARTIFACT_REGISTRY_REPO: ${_REGION}-docker.pkg.dev/${PROJECT_ID}/cloud-run
   _MEMORY: 512Mi
   _CPU: "1"
   _MIN_INSTANCES: "0"
