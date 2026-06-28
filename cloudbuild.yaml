@@ -1,3 +1,5 @@
+options:
+  dynamicSubstitutions: true
 steps:
   - id: fetch-build-secrets
     name: gcr.io/cloud-builders/gcloud
