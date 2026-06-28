@@ -55,21 +55,6 @@ steps:
           --set-env-vars=APP_ENV=production,APP_DEBUG=false \
           --set-secrets=APP_KEY=app-key:latest \
           --set-secrets=DB_PASSWORD=db-password:latest \
-          --set-secrets=GOOGLE_CLOUD_PROJECT_ID=gcs-project-id:latest \
-          --set-secrets=GOOGLE_CLOUD_STORAGE_BUCKET=gcs-bucket:latest \
-          --set-secrets=GOOGLE_CLOUD_STORAGE_PATH_PREFIX=gcs-path-prefix:latest \
-          --set-secrets=GOOGLE_CLOUD_STORAGE_API_URI=gcs-api-uri:latest \
-          --set-secrets=DB_DATABASE=db-database:latest \
-          --set-secrets=DB_USERNAME=db-username:latest \
-          --set-secrets=DB_HOST=db-host:latest \
-          --set-secrets=DB_PORT=db-port:latest \
-          --set-secrets=MAIL_MAILER=mail-mailer:latest \
-          --set-secrets=MAIL_HOST=mail-host:latest \
-          --set-secrets=MAIL_PORT=mail-port:latest \
-          --set-secrets=MAIL_USERNAME=mail-username:latest \
-          --set-secrets=MAIL_PASSWORD=mail-password:latest \
-          --set-secrets=MAIL_FROM_ADDRESS=mail-from-address:latest \
-          --set-secrets=MAIL_FROM_NAME=mail-from-name:latest \
           --service-account=${_SERVICE_ACCOUNT}
 
 images:
