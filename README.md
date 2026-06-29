@@ -1,58 +1,177 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Manajemen Gudang Cloud
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Warehouse management system built with Laravel 13, deployed on Google Cloud Run.
 
-## About Laravel
+## Stack
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+| Layer         | Technology                                      |
+| ------------- | ----------------------------------------------- |
+| Framework     | Laravel 13 / PHP 8.3+                           |
+| Frontend      | Vite 8 / Tailwind CSS 4                         |
+| Database      | SQLite (default), MySQL (production)            |
+| Auth          | Firebase Authentication                         |
+| Storage       | Google Cloud Storage (via Spatie GCS driver)    |
+| Secrets       | Google Secret Manager                           |
+| CI/CD         | Google Cloud Build (`cloudbuild.yaml`)          |
+| Testing       | PHPUnit 12 (in-memory SQLite)                   |
+| Linting       | Laravel Pint (Laravel preset)                   |
+| Deployment    | Docker (FrankenPHP + Octane) → Google Cloud Run |
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Prerequisites
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- PHP 8.3+
+- Composer
+- Node.js 24+ & npm
+- Docker (for production build / Cloud Run deployment)
 
-## Learning Laravel
-
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## Quick Start
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+composer setup
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Runs everything: installs PHP + JS deps, generates `.env` + app key, runs migrations, builds frontend assets.
 
-## Contributing
+## Commands
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### Development
 
-## Code of Conduct
+```bash
+# Full dev stack (artisan serve + queue worker + log tail + vite HMR)
+composer dev
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+# Dev stack without log tail
+composer dev-np
 
-## Security Vulnerabilities
+# Frontend only (Vite dev server)
+npm run dev
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### Testing
+
+```bash
+# Run all tests (clears config cache first)
+composer test
+
+# Run a single test
+php artisan test --filter=TestName
+```
+
+Tests use **in-memory SQLite** — no external database needed.
+
+### Code Formatting
+
+```bash
+# Format with Laravel Pint
+vendor/bin/pint
+
+# Check without fixing
+vendor/bin/pint --test
+```
+
+### Frontend Build
+
+```bash
+# Production build
+npm run build
+```
+
+## Production Deployment (Google Cloud Run)
+
+Multi-stage Docker build. Stage 1 compiles frontend assets (Vite). Stage 2 packs FrankenPHP + Octane worker mode. Secrets are never baked into the image.
+
+### Local Development (Docker Compose)
+
+```bash
+# Build and run full stack (app + MySQL)
+docker-compose up --build
+
+# Stop
+docker-compose down
+```
+
+`docker-compose.yml` uses explicit environment variables — no blanket `.env` import.
+
+### Production Build
+
+```bash
+# Build the image (requires .env.production)
+cp .env.production.example .env.production
+# Fill in Firebase config values, then:
+docker build -t manajemen-gudang .
+```
+
+### Deploy via Cloud Build
+
+Push to `main` branch. `cloudbuild.yaml` pipeline:
+1. Fetches Firebase client config from Secret Manager → writes `.env.production`
+2. Docker build (no `--build-arg` leakage)
+3. Push to Artifact Registry
+4. Deploy to Cloud Run with runtime secrets mounted via `--set-secrets`
+
+### Environment Variables
+
+**Local dev:** `.env` file at project root (gitignored, dockerignored).
+
+**Production (Cloud Run):**
+
+| Category | Variable | Source |
+|---|---|---|
+| **Non-sensitive** | `APP_ENV`, `APP_DEBUG`, `LOG_CHANNEL` | Cloud Run env vars |
+| **Secrets** | `APP_KEY`, `DB_PASSWORD`, `DB_HOST`, GCS creds, mail creds | Secret Manager → `--set-secrets` |
+| **Frontend (public)** | `VITE_FIREBASE_*` | Secret Manager → `.env.production` file (build-time only, `rm`'d after Vite compiles) |
+
+Firebase `VITE_FIREBASE_*` values are **project identifiers**, not secrets. Firebase docs state they're safe to include in client code. Authorization is handled by Firebase Security Rules + App Check.
+
+### GCS Storage Disk
+
+Pre-configured `gcs` disk in `config/filesystems.php`. Uses Uniform Bucket-Level Access. Credentials pulled from GCP IAM (Secret Manager) — no JSON key files.
+
+```php
+Storage::disk('gcs')->put('file.txt', $contents);
+```
+
+### Pre-Deployment Checklist
+
+1. [ ] Set up GCP project with billing enabled
+2. [ ] Enable APIs: Cloud Run, Cloud Build, Secret Manager, Artifact Registry, Cloud SQL, Cloud Storage
+3. [ ] Create Artifact Registry repository
+4. [ ] Create Secret Manager secrets for all runtime vars (`app-key`, `db-password`, `db-host`, `gcs-project-id`, etc.)
+5. [ ] Create a composite secret `firebase-client-config` with all `VITE_FIREBASE_*` values as an `.env.production`-formatted payload
+6. [ ] Set up Cloud SQL MySQL instance (or Compute Engine MySQL)
+7. [ ] Configure `cloudbuild.yaml` substitutions for your region, memory, CPU
+8. [ ] Connect Cloud Build to your GitHub repo
+9. [ ] Create Cloud Build trigger on `main` branch push
+
+## Project Structure
+
+```
+app/
+  Http/Controllers/   — controllers
+  Models/             — Eloquent models
+config/
+  filesystems.php     — local, public, s3, gcs disks
+database/
+  migrations/         — database migrations
+resources/
+  views/              — Blade templates
+  css/app.css         — Tailwind entry
+  js/app.js           — JS entry
+routes/
+  web.php             — web routes
+  api.php             — API routes
+tests/
+  Feature/            — feature tests
+  Unit/               — unit tests
+Dockerfile            — multi-stage production build
+.dockerignore         — Docker build context exclusions
+.env.production.example — template for build-time frontend config
+cloudbuild.yaml       — CI/CD pipeline (Cloud Build)
+docker-compose.yml    — local dev stack (app + MySQL)
+docker/
+  entrypoint.sh       — boot script (config:cache, migrate, start)
+```
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+MIT
