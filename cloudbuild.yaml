@@ -52,7 +52,8 @@ steps:
           --max-instances=${_MAX_INSTANCES} \
           --concurrency=${_CONCURRENCY} \
           --timeout=${_TIMEOUT} \
-          --set-env-vars=APP_ENV=production,APP_DEBUG=false,APP_URL=https://gudang.tech \
+          --add-cloudsql-instances=${PROJECT_ID}:${_REGION}:${_DB_INSTANCE_NAME} \
+          --set-env-vars=APP_ENV=production,APP_DEBUG=false,APP_URL=https://gudang.tech,DB_CONNECTION=mysql,DB_SOCKET=/cloudsql/${PROJECT_ID}:${_REGION}:${_DB_INSTANCE_NAME} \
           --set-secrets=APP_KEY=app-key:latest \
           --set-secrets=DB_PASSWORD=db-password:latest \
           --set-secrets=FIREBASE_CREDENTIALS=firebase-credentials:latest \
@@ -73,3 +74,4 @@ substitutions:
   _CONCURRENCY: "80"
   _TIMEOUT: "300s"
   _SERVICE_ACCOUNT: ""
+  _DB_INSTANCE_NAME: gudang-cc-500709:asia-southeast2:warehouse-db
