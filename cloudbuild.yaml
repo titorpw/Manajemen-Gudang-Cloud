@@ -74,4 +74,4 @@ substitutions:
   _CONCURRENCY: "80"
   _TIMEOUT: "300s"
   _SERVICE_ACCOUNT: ""
-  _DB_INSTANCE_NAME: gudang-cc-500709:asia-southeast2:warehouse-db
+  _DB_INSTANCE_NAME: /cloudsql/gudang-cc-500709:asia-southeast2:warehouse-db
