@@ -179,6 +179,7 @@ Set at deploy time via `cloudbuild.yaml` `--set-env-vars`:
 APP_ENV=production
 APP_DEBUG=false
 APP_URL=https://gudang.tech
+FILESYSTEM_DISK=gcs
 DB_CONNECTION=mysql
 DB_SOCKET=/cloudsql/${PROJECT_ID}:${_REGION}:${_DB_INSTANCE_NAME}
 ```
@@ -189,6 +190,8 @@ Set at deploy time via `--set-secrets` (from Secret Manager):
 APP_KEY=app-key:latest
 DB_PASSWORD=db-password:latest
 FIREBASE_CREDENTIALS=firebase-credentials:latest
+GOOGLE_CLOUD_PROJECT_ID=gcs-project-id:latest
+GOOGLE_CLOUD_STORAGE_BUCKET=gcs-bucket:latest
 ```
 
 Build-time only (injected by `fetch-build-secrets` step → `Dockerfile` Stage 1):
@@ -214,3 +217,4 @@ With `--async`, the runner hands off tracking to GCP and exits immediately (Exit
 | WIF Provider Error 400 | Attribute condition references unmapped claims | Map `google.subject`, `attribute.repository`, `attribute.repository_owner` before using in CEL expression |
 | Build logs stream Error (Exit 1) | Service account lacks default bucket read permissions | Added `--async` flag to `gcloud builds submit` |
 | Cloud SQL instance string malformed | Nested path names in substitutions | Isolated `_DB_INSTANCE_NAME` for `--add-cloudsql-instances`; use full path for `--set-env-vars` |
+| Files lost on deploy | Uploads went to Cloud Run ephemeral disk `Storage::disk('public')` | Switched to `Storage::disk('gcs')`; `cloudbuild.yaml` now sets `FILESYSTEM_DISK=gcs` + `GOOGLE_CLOUD_*` from Secret Manager |

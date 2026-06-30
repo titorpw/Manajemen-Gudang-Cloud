@@ -51,8 +51,7 @@ class ItemController extends Controller
 
         $imageUrl = null;
         if ($request->hasFile('foto')) {
-            $path = $request->file('foto')->store('item_images', 'public');
-            $imageUrl = Storage::url($path);
+            $imageUrl = $request->file('foto')->store('item_images', $this->disk());
         }
 
         $item = Item::create([
@@ -114,12 +113,9 @@ class ItemController extends Controller
 
         if ($request->hasFile('foto')) {
             if ($item->image_url) {
-                Storage::disk('public')->delete(
-                    str_replace('/storage/', '', $item->image_url),
-                );
+                Storage::disk($this->disk())->delete($item->image_url);
             }
-            $path = $request->file('foto')->store('item_images', 'public');
-            $item->image_url = Storage::url($path);
+            $item->image_url = $request->file('foto')->store('item_images', $this->disk());
         }
 
         $item->update([
@@ -155,9 +151,7 @@ class ItemController extends Controller
         }
 
         if ($item->image_url) {
-            Storage::disk('public')->delete(
-                str_replace('/storage/', '', $item->image_url),
-            );
+            Storage::disk($this->disk())->delete($item->image_url);
         }
 
         $item->delete();
@@ -176,7 +170,14 @@ class ItemController extends Controller
             'deskripsi' => $item->description,
             'stok' => $item->stock,
             'limit_stok' => $item->stock_limit,
-            'foto_url' => $item->image_url,
+            'foto_url' => $item->image_url
+                ? Storage::disk($this->disk())->url($item->image_url)
+                : null,
         ];
+    }
+
+    private function disk(): string
+    {
+        return config('filesystems.default', 'local');
     }
 }

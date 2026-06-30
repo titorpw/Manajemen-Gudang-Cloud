@@ -10,7 +10,7 @@ flowchart TB
 
     CR -->|Unix Socket<br/>TLS Encrypted| SQL[(🗄️ Cloud SQL<br/>MySQL 8.0<br/>db-f1-micro<br/>asia-southeast2)]
 
-    CR -->|Signed URL| GCS[📦 Cloud Storage<br/>UBLA Bucket<br/>US Region]
+    CR -->|Store + Public URL| GCS[📦 Cloud Storage<br/>UBLA Bucket<br/>US Region<br/>Public Read via allUsers]
 
     CR -->|Token Validation<br/>JWKs| FAuth[🔐 Firebase Auth<br/>Client-side SDK<br/>Stateless JWT]
 
@@ -55,7 +55,7 @@ flowchart TB
 
     CFWorker -->|"Host header rewrite"| CR
     CR -->|"Unix Socket /cloudsql/..."| SQL
-    CR -->|"Spatie GCS Driver"| GCS
+    CR -->|"Spatie GCS Driver<br/>(ADC, no key file)"| GCS
     CR -->|"kreait/laravel-firebase"| FAuth
     CR -->|"--set-secrets"| SM
 
@@ -95,9 +95,17 @@ sequenceDiagram
     CR->>SQL: Query via Unix socket<br/>/cloudsql/PROJECT:REGION:warehouse-db
     SQL-->>CR: Result set
 
-    opt Asset Request
-        CR->>GCS: Generate signed URL
-        GCS-->>U: Direct asset download
+    opt Image Upload (Staff)
+        U->>CR: POST /api/barang (multipart/form-data)
+        CR->>GCS: store('item_images', 'gcs')
+        GCS-->>CR: Path (item_images/xxx.jpg)
+        CR->>SQL: INSERT image_url = item_images/xxx.jpg
+    end
+
+    opt Image Display
+        CR->>GCS: url(path) → permanent public URL
+        GCS-->>CR: https://storage.googleapis.com/BUCKET/item_images/xxx.jpg
+        CR-->>U: JSON response with foto_url
     end
 
     CR-->>U: HTML/JSON response<br/>(URL::forceRootUrl → relative paths)
@@ -109,7 +117,7 @@ sequenceDiagram
 |-----------|------|------|
 | **Cloud Run** | 512Mi RAM, 1 vCPU, min=0, max=10, concurrency=80, timeout=300s | $0.00 (Always Free: 2M req/mo) |
 | **Cloud SQL** | MySQL 8.0, db-f1-micro, 10GB HDD, Enterprise Sandbox, Single Zone | ~$12.25/mo (trial credit) |
-| **GCS Bucket** | UBLA, US region, 5GB/mo free tier | $0.00 |
+| **GCS Bucket** | UBLA, US region, public read per-object only (`allUsers` → `Storage Legacy Object Reader` — no listing), 5GB/mo free tier | $0.00 |
 | **Firebase Auth** | ≤50k MAU, client-side SDK + stateless backend | $0.00 |
 | **Secret Manager** | 3 active secrets (app-key, db-password, firebase-credentials) | $0.00 (6 free) |
 | **Artifact Registry** | asia-southeast2 region | Minimal ($0.10/GB storage) |
@@ -142,6 +150,18 @@ sequenceDiagram
 
 Mirrors production with MySQL 8.0 sidecar on port 3307, app on port 8080. Health check on MySQL ensures app starts after DB is ready.
 
+## GCS Storage Integration
+
+- **Driver:** `gcs` via `spatie/laravel-google-cloud-storage` (Spatie GCS driver)
+- **Auth:** Application Default Credentials (ADC) — no JSON key file. Cloud Run service account (`Storage Object Admin`) authenticates automatically.
+- **Env vars in production:**
+  - `FILESYSTEM_DISK=gcs` (set via `cloudbuild.yaml` `--set-env-vars`)
+  - `GOOGLE_CLOUD_PROJECT_ID` (from Secret Manager `gcs-project-id`)
+  - `GOOGLE_CLOUD_STORAGE_BUCKET` (from Secret Manager `gcs-bucket`)
+- **URL strategy:** `Storage::disk('gcs')->url($path)` returns permanent public `https://storage.googleapis.com/BUCKET/path` URLs. No signed URLs — images are master data, cached by Cloudflare.
+- **Bucket permission:** Required: `allUsers` granted `Storage Legacy Object Reader` (`roles/storage.legacyObjectReader`) at bucket level. This allows reading individual files but blocks directory listing (no XML index). Without this, public URLs return 403.
+- **Path format stored in DB:** Raw GCS path e.g. `item_images/abc123.jpg` (not full URL). The URL is generated at response time via `transform()`.
+
 ## Resolved Issues
 
 1. **PHP 8.4 requirement** — Transitive dependencies (symfony/error-handler ^8.0) hard-require PHP 8.4 despite Laravel 13 listing 8.3 as minimum.
@@ -149,3 +169,4 @@ Mirrors production with MySQL 8.0 sidecar on port 3307, app on port 8080. Health
 3. **Cloud SQL instance string malformation** — Isolated `_DB_INSTANCE_NAME` substitution for `--add-cloudsql-instances` vs `--set-env-vars`.
 4. **GCP logs stream error** — Resolved with `--async` flag in GitHub Actions workflow.
 5. **WIF Provider Error 400** — Attribute mappings must be declared before condition evaluation in GCP Workload Identity Federation.
+6. **Files lost on deploy** — Controller used `Storage::disk('public')` (Cloud Run ephemeral disk). Switched to `Storage::disk('gcs')` with permanent public URLs.
