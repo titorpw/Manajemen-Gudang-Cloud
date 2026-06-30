@@ -8,6 +8,7 @@
 - Deploy: Google Cloud Run via Docker + Cloud Build
 - Auth: Firebase Authentication (client-side) with stateless token validation
 - Secrets: Google Secret Manager (runtime injection via Cloud Run `--set-secrets`)
+- **Storage**: Production — Google Cloud Storage via `Storage::disk('gcs')` (permanent public URLs). Local dev — `Storage::disk('public')` (local disk). GCS env (`GOOGLE_CLOUD_PROJECT_ID`, `GOOGLE_CLOUD_STORAGE_BUCKET`) via Secret Manager in `cloudbuild.yaml`.
 - `.npmrc` sets `ignore-scripts=true` — `npm install` skips lifecycle scripts
 
 ## Commands
