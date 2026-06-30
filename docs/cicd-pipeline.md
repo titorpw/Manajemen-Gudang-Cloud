@@ -5,7 +5,7 @@
 ```mermaid
 sequenceDiagram
     actor Dev as 👤 Developer
-    participant GH as 🐙 GitHub<br/>setup-cicd branch
+    participant GH as 🐙 GitHub<br/>dev branch
     participant GHA as ⚙️ GitHub Actions<br/>ubuntu-latest
     participant WIF as 🔐 Workload Identity<br/>Federation
     participant CB as 🔨 Cloud Build
@@ -13,7 +13,7 @@ sequenceDiagram
     participant AR as 📦 Artifact Registry
     participant CR as ⚙️ Cloud Run
 
-    Dev->>GH: git push to setup-cicd
+    Dev->>GH: git push to dev
     GH->>GHA: Trigger gcp-deploy.yml
 
     rect rgb(230, 255, 230)
@@ -49,7 +49,7 @@ sequenceDiagram
 
 ```mermaid
 flowchart TD
-    A[👤 Push to setup-cicd] --> B{🐙 GitHub Actions<br/>Triggered?}
+    A[👤 Push to dev] --> B{🐙 GitHub Actions<br/>Triggered?}
     B -->|Yes| C[📥 Checkout code<br/>actions/checkout@v4]
     C --> D[🔐 Auth to GCP<br/>google-github-actions/auth@v2]
     D --> E[⚙️ Setup gcloud CLI<br/>google-github-actions/setup-gcloud@v2]
@@ -97,49 +97,49 @@ flowchart TD
 
 ```yaml
 on:
-  push:
-    branches: [setup-cicd]
+    push:
+        branches: [setup-cicd]
 ```
 
-| Step | Action | Purpose |
-|------|--------|---------|
-| Checkout | `actions/checkout@v4` | Pull source code |
-| Auth | `google-github-actions/auth@v2` | WIF keyless OIDC exchange |
-| Setup gcloud | `google-github-actions/setup-gcloud@v2` | Configure gcloud CLI |
+| Step         | Action                                                  | Purpose                               |
+| ------------ | ------------------------------------------------------- | ------------------------------------- |
+| Checkout     | `actions/checkout@v4`                                   | Pull source code                      |
+| Auth         | `google-github-actions/auth@v2`                         | WIF keyless OIDC exchange             |
+| Setup gcloud | `google-github-actions/setup-gcloud@v2`                 | Configure gcloud CLI                  |
 | Build Submit | `gcloud builds submit --config=cloudbuild.yaml --async` | Trigger Cloud Build, exit immediately |
 
 ### `cloudbuild.yaml`
 
 ```yaml
 steps:
-  - id: fetch-build-secrets    # Pull firebase-client-config → .env.production
-  - id: build                  # docker build (multi-stage)
-  - id: push                   # Push image:$SHORT_SHA
-  - id: push-latest            # Push image:latest
-  - id: deploy                 # gcloud run deploy with all flags
+    - id: fetch-build-secrets # Pull firebase-client-config → .env.production
+    - id: build # docker build (multi-stage)
+    - id: push # Push image:$SHORT_SHA
+    - id: push-latest # Push image:latest
+    - id: deploy # gcloud run deploy with all flags
 ```
 
 **Substitutions:**
 
-| Variable | Value |
-|----------|-------|
-| `_SERVICE_NAME` | `manajemen-gudang` |
-| `_REGION` | `asia-southeast2` |
+| Variable                  | Value                                               |
+| ------------------------- | --------------------------------------------------- |
+| `_SERVICE_NAME`           | `manajemen-gudang`                                  |
+| `_REGION`                 | `asia-southeast2`                                   |
 | `_ARTIFACT_REGISTRY_REPO` | `${_REGION}-docker.pkg.dev/${PROJECT_ID}/cloud-run` |
-| `_MEMORY` | `512Mi` |
-| `_CPU` | `1` |
-| `_MIN_INSTANCES` | `0` |
-| `_MAX_INSTANCES` | `10` |
-| `_CONCURRENCY` | `80` |
-| `_TIMEOUT` | `300s` |
-| `_SERVICE_ACCOUNT` | (empty — uses compute default) |
-| `_DB_INSTANCE_NAME` | `warehouse-db` |
+| `_MEMORY`                 | `512Mi`                                             |
+| `_CPU`                    | `1`                                                 |
+| `_MIN_INSTANCES`          | `0`                                                 |
+| `_MAX_INSTANCES`          | `10`                                                |
+| `_CONCURRENCY`            | `80`                                                |
+| `_TIMEOUT`                | `300s`                                              |
+| `_SERVICE_ACCOUNT`        | (empty — uses compute default)                      |
+| `_DB_INSTANCE_NAME`       | `warehouse-db`                                      |
 
 ### `Dockerfile` — Multi-stage Build
 
-| Stage | Base Image | Actions |
-|-------|-----------|---------|
-| Frontend | `node:24-slim` | `npm ci --ignore-scripts` → `npm run build` → output to `public/build` |
+| Stage      | Base Image                  | Actions                                                                                                         |
+| ---------- | --------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Frontend   | `node:24-slim`              | `npm ci --ignore-scripts` → `npm run build` → output to `public/build`                                          |
 | Production | `dunglas/frankenphp:latest` | `install-php-extensions pdo_mysql gd zip` → `composer install --no-dev` → copy frontend assets → set entrypoint |
 
 ### `docker/entrypoint.sh`
@@ -212,9 +212,9 @@ With `--async`, the runner hands off tracking to GCP and exits immediately (Exit
 
 ## Resolved Pipeline Issues
 
-| Issue | Root Cause | Fix |
-|-------|-----------|-----|
-| WIF Provider Error 400 | Attribute condition references unmapped claims | Map `google.subject`, `attribute.repository`, `attribute.repository_owner` before using in CEL expression |
-| Build logs stream Error (Exit 1) | Service account lacks default bucket read permissions | Added `--async` flag to `gcloud builds submit` |
-| Cloud SQL instance string malformed | Nested path names in substitutions | Isolated `_DB_INSTANCE_NAME` for `--add-cloudsql-instances`; use full path for `--set-env-vars` |
-| Files lost on deploy | Uploads went to Cloud Run ephemeral disk `Storage::disk('public')` | Switched to `Storage::disk('gcs')`; `cloudbuild.yaml` now sets `FILESYSTEM_DISK=gcs` + `GOOGLE_CLOUD_*` from Secret Manager |
+| Issue                               | Root Cause                                                         | Fix                                                                                                                         |
+| ----------------------------------- | ------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| WIF Provider Error 400              | Attribute condition references unmapped claims                     | Map `google.subject`, `attribute.repository`, `attribute.repository_owner` before using in CEL expression                   |
+| Build logs stream Error (Exit 1)    | Service account lacks default bucket read permissions              | Added `--async` flag to `gcloud builds submit`                                                                              |
+| Cloud SQL instance string malformed | Nested path names in substitutions                                 | Isolated `_DB_INSTANCE_NAME` for `--add-cloudsql-instances`; use full path for `--set-env-vars`                             |
+| Files lost on deploy                | Uploads went to Cloud Run ephemeral disk `Storage::disk('public')` | Switched to `Storage::disk('gcs')`; `cloudbuild.yaml` now sets `FILESYSTEM_DISK=gcs` + `GOOGLE_CLOUD_*` from Secret Manager |
