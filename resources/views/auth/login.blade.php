@@ -2,6 +2,17 @@
 <html lang="id">
 
 <head>
+    <script>
+        (function () {
+            const savedTheme = localStorage.getItem('gudang_cloud_theme');
+            const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        })();
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -15,14 +26,38 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     <style>
+        .no-transition, .no-transition * {
+            transition: none !important;
+            animation: none !important;
+        }
+
         body {
             font-family: 'Instrument Sans', sans-serif;
+        }
+
+        /* Autofill Styles Override */
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover, 
+        input:-webkit-autofill:focus, 
+        input:-webkit-autofill:active {
+            -webkit-box-shadow: 0 0 0 1000px #f1f5f9 inset !important;
+            -webkit-text-fill-color: #0f172a !important;
+            transition: background-color 5000s ease-in-out 0s;
+        }
+
+        .dark input:-webkit-autofill,
+        .dark input:-webkit-autofill:hover, 
+        .dark input:-webkit-autofill:focus, 
+        .dark input:-webkit-autofill:active {
+            -webkit-box-shadow: 0 0 0 1000px #020617 inset !important;
+            -webkit-text-fill-color: #f8fafc !important;
+            transition: background-color 5000s ease-in-out 0s;
         }
     </style>
 </head>
 
 <body
-    class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 min-h-screen flex items-center justify-center relative overflow-hidden selection:bg-blue-500/30 selection:text-blue-200 transition-colors duration-300">
+    class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 min-h-screen flex items-center justify-center relative overflow-hidden selection:bg-blue-500/30 selection:text-blue-200 transition-colors duration-300 no-transition">
 
     <div
         class="absolute -top-40 -left-40 w-96 h-96 bg-blue-600/10 dark:bg-blue-600/20 rounded-full blur-3xl pointer-events-none transition-colors duration-300">

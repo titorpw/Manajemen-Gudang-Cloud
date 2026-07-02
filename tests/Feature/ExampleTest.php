@@ -12,8 +12,8 @@ class ExampleTest extends TestCase
      */
     public function test_the_application_redirects_to_login(): void
     {
-        $response = $this->get("/");
+        $response = $this->get('/');
 
-        $response->assertRedirect("/login");
+        $response->assertRedirect('/login');
     }
 }
