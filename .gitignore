@@ -34,3 +34,9 @@ app/storage/
 # Laravel 5 & Lumen specific with changed public path
 public_html/storage
 public_html/hot
+
+# Firebase credentials
+/storage/app/firebase/firebase_credentials.json
+
+# Khusus Tito karena pakai bun
+bun.lock
