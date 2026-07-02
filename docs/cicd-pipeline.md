@@ -5,7 +5,7 @@
 ```mermaid
 sequenceDiagram
     actor Dev as 👤 Developer
-    participant GH as 🐙 GitHub<br/>dev branch
+    participant GH as 🐙 GitHub<br/>main branch
     participant GHA as ⚙️ GitHub Actions<br/>ubuntu-latest
     participant WIF as 🔐 Workload Identity<br/>Federation
     participant CB as 🔨 Cloud Build
@@ -13,7 +13,7 @@ sequenceDiagram
     participant AR as 📦 Artifact Registry
     participant CR as ⚙️ Cloud Run
 
-    Dev->>GH: git push to dev
+    Dev->>GH: git push to main
     GH->>GHA: Trigger gcp-deploy.yml
 
     rect rgb(230, 255, 230)
@@ -49,7 +49,7 @@ sequenceDiagram
 
 ```mermaid
 flowchart TD
-    A[👤 Push to dev] --> B{🐙 GitHub Actions<br/>Triggered?}
+    A[👤 Push to main] --> B{🐙 GitHub Actions<br/>Triggered?}
     B -->|Yes| C[📥 Checkout code<br/>actions/checkout@v4]
     C --> D[🔐 Auth to GCP<br/>google-github-actions/auth@v2]
     D --> E[⚙️ Setup gcloud CLI<br/>google-github-actions/setup-gcloud@v2]
@@ -98,7 +98,7 @@ flowchart TD
 ```yaml
 on:
     push:
-        branches: [setup-cicd]
+        branches: [main]
 ```
 
 | Step         | Action                                                  | Purpose                               |
